@@ -7,9 +7,11 @@
   const K = F.CONNECTOME;
   const C = { ink: '#16181d', slate: '#6b7280', line: '#dde1e7', red: '#d62626', honey: '#e9a21b', volt: '#3b5bff' };
   const FLIES = 10;
-  const DURATION = { fly: 520, hover: 420, land: 200, zap: 650, sugar: 1200, miss: 1100 }; // ms at Watch speed
-  const PACE = { watch: 1, fast: 0.25 };
+  const DURATION = { fly: 520, hover: 420, land: 200, zap: 650, sugar: 1200, miss: 1100 }; // ms at Normal speed
+  const PACE = { normal: 1, fast: 0.25 };
   const FLY_SIZE = 2.6;
+  const RERANK_EVERY = 900;  // ms; often enough to feel live, calm enough to click a card
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const zapStrength = () => 0.1 + (1.9 * Number($('zap').value)) / 100;
 
   let speed = 'fast';
@@ -20,6 +22,8 @@
   let turboShown = 0;
   let panelsDirty = true;
   let chartDirty = true;
+  let rankDirty = true;
+  let rankedAt = -Infinity;
   const lab = [];
   const cards = [];
 
@@ -39,13 +43,16 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'card';
-      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">Fly ${i + 1}</span><span class="score">searching</span>`;
+      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">Fly ${i + 1}<span class="rank"></span></span><span class="score">searching</span>`;
       button.addEventListener('click', () => setFocus(i));
       $('lab').appendChild(button);
       const thumb = document.createElement('canvas');
       thumb.width = 240;
       thumb.height = 150;
-      cards.push({ button, canvas: button.querySelector('canvas'), score: button.querySelector('.score'), thumb, scene: null, seen: -1, flash: '' });
+      cards.push({
+        button, thumb, canvas: button.querySelector('canvas'), score: button.querySelector('.score'),
+        rank: button.querySelector('.rank'), scene: null, seen: -1, flash: '',
+      });
     }
   }
 
@@ -62,7 +69,41 @@
     clearEyes();
     panelsDirty = true;
     chartDirty = true;
+    rankDirty = true;
   }
+
+  // The lab is a leaderboard: whoever has found him the most sits first. Ties keep fly order,
+  // so cards only move when someone actually overtakes someone.
+  function rankCards() {
+    const order = lab.slice().sort((a, b) => b.game.sugars - a.game.sugars || a.index - b.index);
+    order.forEach((fly) => {
+      const card = cards[fly.index];
+      const finds = fly.game.sugars;
+      const place = finds ? order.findIndex((other) => other.game.sugars === finds) + 1 : 0;
+      card.rank.textContent = place ? ordinal(place) : '';
+      card.button.classList.toggle('leader', place === 1);
+    });
+
+    const grid = $('lab');
+    const next = order.map((fly) => cards[fly.index].button);
+    if (next.every((el, i) => el === grid.children[i])) return;
+    const before = new Map(next.map((el) => [el, el.getBoundingClientRect()]));
+    const focused = document.activeElement;
+    for (const el of next) grid.appendChild(el); // move the real elements, so tab order matches the screen
+    if (next.includes(focused)) focused.focus({ preventScroll: true });
+    if (reducedMotion) return;
+    for (const el of next) {
+      const from = before.get(el);
+      const to = el.getBoundingClientRect();
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      if (dx || dy) {
+        el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 450, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
+      }
+    }
+  }
+
+  const ordinal = (n) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 
   function setFocus(i) {
     focus = i;
@@ -147,10 +188,14 @@
   }
 
   function noteOutcome(fly, outcome, now) {
-    if (fly.game.over) chartDirty = true;
+    if (fly.game.over) {
+      chartDirty = true;
+      rankDirty = true;
+    }
     if (speed === 'turbo') return; // too many to show one by one; turbo refreshes the panels itself
     if (outcome !== 'none') {
-      fly.flash = { kind: outcome, until: now + 500 };
+      const found = outcome === 'sugar';
+      fly.flash = { kind: found ? 'found' : 'zap', until: now + (found ? 1000 : 500) };
       if (fly.index === focus) pulseDopamine(outcome);
     }
     if (fly.index === focus || fly.game.over) panelsDirty = true;
@@ -183,6 +228,11 @@
     drawCards(now);
     if (panelsDirty) drawPanels();
     if (chartDirty) drawChart();
+    if (rankDirty && now - rankedAt >= RERANK_EVERY) {
+      rankDirty = false;
+      rankedAt = now;
+      rankCards();
+    }
     requestAnimationFrame(frame);
   }
 
@@ -459,8 +509,7 @@
       }
       if (card.seen !== game.history.length) {
         card.seen = game.history.length;
-        const recent = game.history.slice(-10);
-        card.score.textContent = recent.length ? `${recent.filter((r) => r.found).length}/${recent.length} found` : 'searching';
+        card.score.textContent = game.history.length ? `${game.sugars} ${game.sugars === 1 ? 'find' : 'finds'}` : 'searching';
       }
     });
   }

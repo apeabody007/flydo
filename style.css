@@ -7,6 +7,7 @@
   --red: #d62626;   /* the striped guy's red, the one color the flies can barely see */
   --honey: #e9a21b; /* sugar */
   --volt: #3b5bff;  /* zap */
+  --found: #22c55e; /* a fly just found him */
   --display: "Pixelify Sans", ui-monospace, "Courier New", monospace;
   --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -60,6 +61,9 @@ h1 {
   padding: 12px 24px 24px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;
+  /* The side panels are taller than the stage. A flexible second row takes up that extra
+     height, so the lab sits right under the stage instead of below a gap. */
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "stage side"
     "lab   side"
@@ -198,6 +202,7 @@ h2 {
 }
 
 .card {
+  position: relative;
   display: grid;
   gap: 3px;
   padding: 6px 6px 8px;
@@ -221,10 +226,46 @@ h2 {
 
 .card .name { font-family: var(--display); font-size: 15px; line-height: 1.1; }
 .card .score { font-size: 12px; color: var(--slate); font-variant-numeric: tabular-nums; }
+
+.card .rank {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: var(--slate);
+  font-family: var(--body);
+  font-size: 10.5px;
+  vertical-align: 2px;
+}
+
+.card .rank:empty { display: none; }
+.card.leader .rank { background: var(--ink); color: #fff; }
 .card:hover { border-color: #b9bfc9; }
 .card[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
-.card[data-flash="sugar"] { border-color: var(--honey); box-shadow: 0 0 0 2px var(--honey); }
 .card[data-flash="zap"] { border-color: var(--volt); box-shadow: 0 0 0 2px var(--volt); }
+
+/* When a fly finds him, its card glows green for a second, on a layer of its own so the
+   watched-fly outline underneath stays put. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 11px;
+  box-shadow: 0 0 0 3px var(--found), 0 0 16px 2px rgba(34, 197, 94, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card[data-flash="found"]::after { animation: found-glow 1s ease-out; }
+
+@keyframes found-glow {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card[data-flash="found"]::after { animation: none; opacity: 1; }
+}
 
 .eyes {
   display: grid;
@@ -343,6 +384,7 @@ figcaption {
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
     grid-template-areas: "stage" "lab" "side" "chart";
   }
   .lab { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
