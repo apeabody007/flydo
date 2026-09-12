@@ -298,14 +298,15 @@ figcaption {
   color: var(--slate);
 }
 
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .dot.sugar { background: var(--honey); }
 .dot.zapdot { background: var(--volt); }
 .dot.firing { background: var(--line); box-shadow: inset 0 0 0 2px var(--ink); }
-.line { display: inline-block; width: 18px; border-top: 2.5px solid var(--ink); }
-.line.mine { border-top: 2px solid var(--red); }
-.line.others { border-top: 1px solid rgba(107, 114, 128, 0.55); }
+.key { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }
+.key.mine { border-top-color: var(--red); }
+.key.band { height: 10px; border: 0; border-radius: 2px; background: rgba(22, 24, 29, 0.1); }
+.key.base { border-top: 2px dashed var(--slate); }
 
 .meter { margin-top: 14px; }
 
@@ -371,7 +372,52 @@ figcaption {
 
 .stats strong { color: var(--ink); }
 
-#chart { display: block; width: 100%; height: 230px; margin-top: 12px; }
+.charthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.labnow { margin: 0; text-align: right; }
+.labnow-label { display: block; font-size: 12px; color: var(--slate); }
+.labnow-value { font: 600 30px/1.1 var(--body); }
+
+.chartlegend { margin-top: 10px; }
+
+.chartwrap { position: relative; margin-top: 6px; }
+
+#chart { display: block; width: 100%; height: 250px; border-radius: 4px; }
+#chart:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+
+.tip {
+  position: absolute;
+  z-index: 2;
+  min-width: 190px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgba(22, 24, 29, 0.12);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.tip .tip-round { margin-bottom: 4px; color: var(--slate); }
+.tip .row { display: grid; grid-template-columns: 18px auto 1fr; align-items: center; gap: 8px; line-height: 1.7; }
+.tip .value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip .label { color: var(--slate); }
+
+.numbers { margin-top: 10px; font-size: 13px; }
+.numbers summary { cursor: pointer; color: var(--slate); }
+.numbers summary:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+.tablewrap { overflow-x: auto; }
+.numbers table { margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.numbers caption { padding-bottom: 6px; color: var(--slate); text-align: left; font-size: 12px; }
+.numbers th, .numbers td { padding: 4px 16px 4px 0; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.numbers th { font-weight: 600; }
+.numbers th:first-child, .numbers td:first-child { text-align: left; }
 
 .footer {
   max-width: 1240px;

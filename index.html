@@ -79,19 +79,42 @@
         <h2>Scorecard</h2>
         <dl>
           <div><dt>Round</dt><dd id="statRound">1</dd></div>
-          <div><dt>Found, last 20</dt><dd id="statFound">–</dd></div>
-          <div><dt>Visits, last 20</dt><dd id="statVisits">–</dd></div>
+          <div><dt>Found, last 10</dt><dd id="statFound">–</dd></div>
+          <div><dt>Visits, last 10</dt><dd id="statVisits">–</dd></div>
           <div><dt>Zaps</dt><dd id="statZaps">0</dd></div>
         </dl>
-        <p class="note">Whole lab, last 20 rounds each: <strong id="labFound">–</strong> found</p>
+        <p class="note">Whole lab, last 10 rounds each: <strong id="labFound">–</strong> found</p>
       </section>
     </aside>
 
     <section class="panel chartpanel" aria-labelledby="charthead">
-      <h2 id="charthead">He always hides again</h2>
-      <p class="note">People each fly checked before finding him, round by round, averaged over 5 rounds. Lower is better. One must imagine the fly happy.</p>
-      <canvas id="chart" role="img" aria-label="Learning curves for the ten flies"></canvas>
-      <p class="legend"><span><i class="line avg"></i>lab average</span><span><i class="line mine"></i>the fly you're watching</span><span><i class="line others"></i>other flies</span></p>
+      <div class="charthead">
+        <div>
+          <h2 id="charthead">How often they find him</h2>
+          <p class="note">Out of each fly's last 10 rounds. Higher is better. He always hides again; one must imagine the fly happy.</p>
+        </div>
+        <p class="labnow"><span class="labnow-label">Lab average now</span><span id="labNow" class="labnow-value">–</span></p>
+      </div>
+      <p class="legend chartlegend">
+        <span><i class="key avg"></i>Lab average</span>
+        <span><i class="key mine"></i><span><span id="legendFly">Fly A</span>, the one you're watching</span></span>
+        <span><i class="key band"></i>Middle half of the flies</span>
+        <span><i class="key base"></i>Flies that can't learn</span>
+      </p>
+      <div class="chartwrap">
+        <canvas id="chart" tabindex="0" role="img" aria-label="How often the flies find him, round by round. Hover or use the arrow keys to read any round."></canvas>
+        <div id="chartTip" class="tip" hidden></div>
+      </div>
+      <details id="numbers" class="numbers">
+        <summary>Show the numbers</summary>
+        <div class="tablewrap">
+          <table>
+            <caption>The last 15 rounds, newest first. Each value is the share of a fly's last 10 rounds where it found him.</caption>
+            <thead><tr><th scope="col">Round</th><th scope="col">Lab average</th><th scope="col" id="numbersFly">Fly A</th><th scope="col">Middle half</th></tr></thead>
+            <tbody id="numbersBody"></tbody>
+          </table>
+        </div>
+      </details>
     </section>
   </main>
 

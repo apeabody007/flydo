@@ -14,6 +14,9 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const zapStrength = () => 0.1 + (1.9 * Number($('zap').value)) / 100;
   const flyName = (i) => `Fly ${String.fromCharCode(65 + i)}`; // letters, so names never look like places
+  const WINDOW = 10;       // rounds; every "how often it finds him" number on the page uses this window
+  const CANT_LEARN = 0.11; // share found by flies with learning switched off, measured by test/learn.test.js
+  const pct = (x) => `${Math.round(x * 100)}%`;
 
   let speed = 'fast';
   let paused = false;
@@ -110,6 +113,7 @@
     focus = i;
     cards.forEach((card, j) => card.button.setAttribute('aria-pressed', String(j === i)));
     $('watching').textContent = `Watching ${flyName(i)}`;
+    $('legendFly').textContent = flyName(i);
     banner(null);
     if (lab[i].plan) drawEyes(lab[i]);
     else clearEyes();
@@ -405,16 +409,21 @@
     ctx.restore();
   }
 
+  // A red cross over someone the fly landed on by mistake. The white halo keeps it readable
+  // over red hats and shirts.
   function drawCross(ctx, x, y) {
     ctx.save();
-    ctx.strokeStyle = C.volt;
-    ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(x - 3.5, y - 3.5);
     ctx.lineTo(x + 3.5, y + 3.5);
     ctx.moveTo(x + 3.5, y - 3.5);
     ctx.lineTo(x - 3.5, y + 3.5);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4.2;
+    ctx.stroke();
+    ctx.strokeStyle = C.red;
+    ctx.lineWidth = 2.2;
     ctx.stroke();
     ctx.restore();
   }
@@ -622,15 +631,13 @@
   function drawPanels() {
     panelsDirty = false;
     const { game, plan } = lab[focus];
-    const recent = game.history.slice(-20);
+    const recent = game.history.slice(-WINDOW);
     $('statRound').textContent = game.round;
     $('statFound').textContent = recent.length ? `${recent.filter((r) => r.found).length}/${recent.length}` : '–';
     $('statVisits').textContent = recent.length ? Math.round(recent.reduce((t, r) => t + r.visits, 0) / recent.length) : '–';
     $('statZaps').textContent = game.zaps.toLocaleString();
-    const everyone = lab.flatMap((fly) => fly.game.history.slice(-20));
-    $('labFound').textContent = everyone.length
-      ? `${Math.round((100 * everyone.filter((r) => r.found).length) / everyone.length)}%`
-      : '–';
+    const labNow = labAverageNow();
+    $('labFound').textContent = labNow === null ? '–' : pct(labNow);
     if (!plan) return;
     drawKenyonCells($('kcLeft'), game.brain, 0, plan.thought.active[0]);
     drawKenyonCells($('kcRight'), game.brain, 1, plan.thought.active[1]);
@@ -656,6 +663,46 @@
   }
 
   // ---------- learning curves ----------
+  const chartView = { hover: null, geom: null };
+
+  // After each round: the share of the fly's last WINDOW rounds where it found him.
+  function foundRates(history) {
+    const rates = [];
+    let found = 0;
+    history.forEach((round, i) => {
+      found += round.found ? 1 : 0;
+      if (i >= WINDOW) found -= history[i - WINDOW].found ? 1 : 0;
+      rates.push(found / Math.min(i + 1, WINDOW));
+    });
+    return rates;
+  }
+
+  function quantile(sorted, p) {
+    const pos = (sorted.length - 1) * p;
+    const lo = Math.floor(pos);
+    const hi = Math.ceil(pos);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+
+  // The lab's curve runs for as long as at least half the flies have played that many rounds.
+  function chartSeries() {
+    const rates = lab.map((fly) => foundRates(fly.game.history));
+    const labCurve = [];
+    for (let r = 0; ; r++) {
+      const values = rates.filter((fly) => fly.length > r).map((fly) => fly[r]).sort((a, b) => a - b);
+      if (values.length < FLIES / 2) break;
+      labCurve.push({ mean: values.reduce((a, b) => a + b, 0) / values.length, low: quantile(values, 0.25), high: quantile(values, 0.75) });
+    }
+    return { labCurve, mine: rates[focus] };
+  }
+
+  // The lab's average right now is the last point on its curve, so the chart, its end label and
+  // the scorecard always agree.
+  function labAverageNow(series = chartSeries()) {
+    const { labCurve } = series;
+    return labCurve.length ? labCurve[labCurve.length - 1].mean : null;
+  }
+
   function drawChart() {
     chartDirty = false;
     const canvas = $('chart');
@@ -665,63 +712,263 @@
     const h = canvas.height / dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    const m = { l: 40, r: 14, t: 10, b: 26 };
+
+    const series = chartSeries();
+    const { labCurve, mine } = series;
+    const labNow = labAverageNow(series);
+    $('labNow').textContent = labNow === null ? '–' : pct(labNow);
+    drawTable(series);
+
+    const endLabels = w >= 480;
+    const m = { l: 44, r: endLabels ? 122 : 14, t: 24, b: 30 };
     const pw = w - m.l - m.r;
     const ph = h - m.t - m.b;
-    const most = Math.max(...lab.map((fly) => fly.game.history.length));
-    const span = Math.max(30, most);
+    const rounds = Math.max(labCurve.length, mine.length);
+    const span = Math.max(20, rounds);
     const X = (round) => m.l + ((round - 1) / (span - 1)) * pw;
-    const Y = (visits) => m.t + ph - (visits / F.MAX_VISITS) * ph;
+    const Y = (rate) => m.t + ph - rate * ph;
+    chartView.geom = { m, pw, span, rounds };
 
-    ctx.font = '11px ui-monospace, "SF Mono", Menlo, monospace';
+    // Recessive grid, labels in text colours.
     ctx.lineWidth = 1;
+    ctx.font = '11px ui-monospace, "SF Mono", Menlo, monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    for (let v = 0; v <= F.MAX_VISITS; v += 30) {
+    for (const v of [0, 0.25, 0.5, 0.75, 1]) {
       ctx.strokeStyle = C.line;
       ctx.beginPath();
-      ctx.moveTo(m.l, Y(v));
-      ctx.lineTo(m.l + pw, Y(v));
+      ctx.moveTo(m.l, Math.round(Y(v)) + 0.5);
+      ctx.lineTo(m.l + pw, Math.round(Y(v)) + 0.5);
       ctx.stroke();
       ctx.fillStyle = C.slate;
-      ctx.fillText(String(v), m.l - 8, Y(v));
+      ctx.fillText(pct(v), m.l - 8, Y(v));
     }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    const step = span <= 40 ? 5 : span <= 100 ? 10 : span <= 250 ? 25 : span <= 600 ? 50 : 100;
+    const step = span <= 30 ? 5 : span <= 100 ? 10 : span <= 250 ? 25 : span <= 600 ? 50 : 100;
     for (let r = step; r <= span; r += step) ctx.fillText(String(r), X(r), m.t + ph + 8);
+    ctx.textAlign = 'left';
+    ctx.fillText('round', m.l, m.t + ph + 8);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('found him', m.l, m.t - 8);
 
-    const smooth = (history) => history.map((_, i) => {
-      const window = history.slice(Math.max(0, i - 4), i + 1);
-      return window.reduce((t, r) => t + r.visits, 0) / window.length;
-    });
-    const trace = (values, color, width) => {
-      if (values.length < 2) return;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      values.forEach((v, i) => (i ? ctx.lineTo(X(i + 1), Y(v)) : ctx.moveTo(X(1), Y(v))));
-      ctx.stroke();
-    };
-    if (most === 0) {
-      ctx.fillStyle = C.slate;
+    if (!rounds) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = '13px system-ui, sans-serif';
       ctx.fillText('Curves appear as flies finish their first rounds.', m.l + pw / 2, m.t + ph / 2);
+      chartTip(null);
       return;
     }
-    const lines = lab.map((fly) => smooth(fly.game.history));
-    lines.forEach((line, i) => { if (i !== focus) trace(line, 'rgba(107, 114, 128, 0.35)', 1); });
-    trace(lines[focus], C.red, 2);
-    const mean = [];
-    for (let r = 0; r < most; r++) {
-      const values = lines.filter((line) => line.length > r).map((line) => line[r]);
-      if (values.length < FLIES / 2) break;
-      mean.push(values.reduce((a, b) => a + b, 0) / values.length);
+
+    // What a fly that can't learn manages, for scale.
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = C.slate;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(m.l, Y(CANT_LEARN));
+    ctx.lineTo(m.l + pw, Y(CANT_LEARN));
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = C.slate;
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`can't learn ${pct(CANT_LEARN)}`, m.l + pw - 4, Y(CANT_LEARN) - 3);
+
+    // Where the middle half of the flies are: a light wash.
+    if (labCurve.length > 1) {
+      ctx.fillStyle = 'rgba(22, 24, 29, 0.1)';
+      ctx.beginPath();
+      labCurve.forEach((p, i) => (i ? ctx.lineTo(X(i + 1), Y(p.high)) : ctx.moveTo(X(1), Y(p.high))));
+      for (let i = labCurve.length - 1; i >= 0; i--) ctx.lineTo(X(i + 1), Y(labCurve[i].low));
+      ctx.closePath();
+      ctx.fill();
     }
-    trace(mean, C.ink, 2.5);
+
+    const trace = (values, color) => {
+      if (values.length < 2) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      values.forEach((v, i) => (i ? ctx.lineTo(X(i + 1), Y(v)) : ctx.moveTo(X(1), Y(v))));
+      ctx.stroke();
+    };
+    trace(mine, C.red);
+    trace(labCurve.map((p) => p.mean), C.ink);
+
+    const ends = [
+      { name: 'lab average', value: labCurve.length ? labCurve[labCurve.length - 1].mean : null, x: X(labCurve.length), color: C.ink },
+      { name: flyName(focus), value: mine.length ? mine[mine.length - 1] : null, x: X(mine.length), color: C.red },
+    ].filter((end) => end.value !== null);
+    for (const end of ends) dot(ctx, end.x, Y(end.value), end.color);
+    if (endLabels) drawEndLabels(ctx, ends, Y, m, pw, ph);
+
+    // Crosshair on the round under the pointer (or keyboard), and a readout for every series.
+    const hover = chartView.hover === null ? null : Math.min(chartView.hover, rounds);
+    if (hover === null) return chartTip(null);
+    const hx = X(hover);
+    ctx.strokeStyle = 'rgba(22, 24, 29, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(hx) + 0.5, m.t);
+    ctx.lineTo(Math.round(hx) + 0.5, m.t + ph);
+    ctx.stroke();
+    const point = labCurve[hover - 1];
+    if (point) dot(ctx, hx, Y(point.mean), C.ink);
+    if (mine[hover - 1] !== undefined) dot(ctx, hx, Y(mine[hover - 1]), C.red);
+    chartTip({ round: hover, point, mine: mine[hover - 1], x: hx, top: m.t, width: w });
+  }
+
+  // A filled end marker with a 2px surface ring, so it stays legible where lines cross.
+  function dot(ctx, x, y, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+  }
+
+  // Value and name just past each line's end. If two labels would collide they spread apart,
+  // and a short leader line keeps each tied to its own line.
+  function drawEndLabels(ctx, ends, Y, m, pw, ph) {
+    const GAP = 16;
+    const top = m.t + 6;
+    const bottom = m.t + ph - 6;
+    const items = ends
+      .map((end) => ({ ...end, y: Y(end.value), labelX: Math.min(end.x, m.l + pw) + 10, labelY: Math.max(top, Math.min(bottom, Y(end.value))) }))
+      .sort((a, b) => a.y - b.y);
+    const sideBySide = items.length === 2 && Math.abs(items[0].labelX - items[1].labelX) < 110;
+    if (sideBySide && items[1].labelY - items[0].labelY < GAP) {
+      const mid = (items[0].labelY + items[1].labelY) / 2;
+      items[0].labelY = Math.max(top, Math.min(bottom - GAP, mid - GAP / 2));
+      items[1].labelY = items[0].labelY + GAP;
+    }
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    for (const item of items) {
+      const x = item.labelX;
+      const ly = item.labelY;
+      if (Math.abs(ly - item.y) > 1) {
+        ctx.strokeStyle = C.line;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(item.x + 6, item.y);
+        ctx.lineTo(x - 2, ly);
+        ctx.stroke();
+      }
+      ctx.font = '600 12px system-ui, sans-serif';
+      ctx.fillStyle = C.ink;
+      const value = pct(item.value);
+      const valueWidth = ctx.measureText(value).width;
+      ctx.fillText(value, x, ly);
+      ctx.font = '12px system-ui, sans-serif';
+      ctx.fillStyle = C.slate;
+      ctx.fillText(item.name, x + valueWidth + 5, ly);
+    }
+  }
+
+  function chartTip(info) {
+    const tip = $('chartTip');
+    if (!info) {
+      tip.hidden = true;
+      return;
+    }
+    const rows = [];
+    const row = (key, value, label) => {
+      const el = document.createElement('div');
+      el.className = 'row';
+      const swatch = document.createElement('i');
+      swatch.className = `key ${key}`;
+      const v = document.createElement('span');
+      v.className = 'value';
+      v.textContent = value;
+      const l = document.createElement('span');
+      l.className = 'label';
+      l.textContent = label;
+      el.append(swatch, v, l);
+      rows.push(el);
+    };
+    if (info.point) {
+      row('avg', pct(info.point.mean), 'lab average');
+      row('band', `${pct(info.point.low)}–${pct(info.point.high)}`, 'middle half of the flies');
+    }
+    row('mine', info.mine === undefined ? '–' : pct(info.mine), flyName(focus));
+    row('base', pct(CANT_LEARN), "flies that can't learn");
+    const head = document.createElement('div');
+    head.className = 'tip-round';
+    head.textContent = `Round ${info.round}`;
+    tip.replaceChildren(head, ...rows);
+    tip.hidden = false;
+    const room = info.x + 16 + tip.offsetWidth <= info.width;
+    tip.style.left = `${room ? info.x + 16 : info.x - 16 - tip.offsetWidth}px`;
+    tip.style.top = `${info.top}px`;
+  }
+
+  // The chart's numbers as a table, for anyone who'd rather read than hover.
+  function drawTable({ labCurve, mine }) {
+    if (!$('numbers').open) return;
+    $('numbersFly').textContent = flyName(focus);
+    const newest = Math.max(labCurve.length, mine.length);
+    const rows = [];
+    for (let r = newest; r >= 1 && r > newest - 15; r--) {
+      const point = labCurve[r - 1];
+      const cells = [
+        String(r),
+        point ? pct(point.mean) : '–',
+        mine[r - 1] !== undefined ? pct(mine[r - 1]) : '–',
+        point ? `${pct(point.low)}–${pct(point.high)}` : '–',
+      ];
+      const tr = document.createElement('tr');
+      for (const text of cells) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.append(td);
+      }
+      rows.push(tr);
+    }
+    $('numbersBody').replaceChildren(...rows);
+  }
+
+  {
+    const canvas = $('chart');
+    const hoverAt = (clientX) => {
+      const g = chartView.geom;
+      if (!g || !g.rounds) return;
+      const x = clientX - canvas.getBoundingClientRect().left;
+      chartView.hover = Math.max(1, Math.min(g.rounds, Math.round(((x - g.m.l) / g.pw) * (g.span - 1)) + 1));
+      chartDirty = true;
+    };
+    canvas.addEventListener('pointermove', (e) => hoverAt(e.clientX));
+    canvas.addEventListener('pointerleave', () => {
+      if (document.activeElement === canvas) return;
+      chartView.hover = null;
+      chartDirty = true;
+    });
+    canvas.addEventListener('focus', () => {
+      if (chartView.geom && chartView.geom.rounds) chartView.hover = chartView.geom.rounds;
+      chartDirty = true;
+    });
+    canvas.addEventListener('blur', () => {
+      chartView.hover = null;
+      chartDirty = true;
+    });
+    canvas.addEventListener('keydown', (e) => {
+      const steps = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity };
+      const g = chartView.geom;
+      if (!(e.key in steps) || !g || !g.rounds) return;
+      e.preventDefault();
+      chartView.hover = Math.max(1, Math.min(g.rounds, (chartView.hover ?? g.rounds) + steps[e.key]));
+      chartDirty = true;
+    });
+    $('numbers').addEventListener('toggle', () => {
+      chartDirty = true;
+    });
   }
 
   // ---------- controls ----------
