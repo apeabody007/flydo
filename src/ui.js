@@ -13,6 +13,7 @@
   const RERANK_EVERY = 900;  // ms; often enough to feel live, calm enough to click a card
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const zapStrength = () => 0.1 + (1.9 * Number($('zap').value)) / 100;
+  const flyName = (i) => `Fly ${String.fromCharCode(65 + i)}`; // letters, so names never look like places
 
   let speed = 'fast';
   let paused = false;
@@ -43,7 +44,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'card';
-      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">Fly ${i + 1}<span class="rank"></span></span><span class="score">searching</span>`;
+      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">${flyName(i)}<span class="rank"></span></span><span class="score">searching</span>`;
       button.addEventListener('click', () => setFocus(i));
       $('lab').appendChild(button);
       const thumb = document.createElement('canvas');
@@ -108,7 +109,7 @@
   function setFocus(i) {
     focus = i;
     cards.forEach((card, j) => card.button.setAttribute('aria-pressed', String(j === i)));
-    $('watching').textContent = `Watching Fly ${i + 1}`;
+    $('watching').textContent = `Watching ${flyName(i)}`;
     banner(null);
     if (lab[i].plan) drawEyes(lab[i]);
     else clearEyes();
