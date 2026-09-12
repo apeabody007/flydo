@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Where's Fly-do?</title>
+  <meta name="description" content="Ten fruit flies learn to find the striped guy, using eye and brain cell counts from a real fly's complete wiring diagram.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <h1>Where's Fly-do?</h1>
+    <p class="lede">Ten fruit flies learning to find the striped guy. Each one sees through an eye with a real fly's facet count and learns with mushroom bodies sized from a real fly's wiring diagram. Land on him: sugar. Land on anyone else: a zap.</p>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-labelledby="watching">
+      <div class="stagehead">
+        <h2 id="watching">Watching Fly 1</h2>
+        <p class="hint">Pick any fly in the lab to watch it.</p>
+      </div>
+      <div class="frame">
+        <canvas id="page" role="img" aria-label="A crowd of pixel people, with a fly searching it"></canvas>
+        <p id="banner" class="banner" hidden></p>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Speed">
+          <button type="button" data-speed="watch" aria-pressed="false">Watch</button>
+          <button type="button" data-speed="fast" aria-pressed="true">Fast</button>
+          <button type="button" data-speed="turbo" aria-pressed="false">Turbo</button>
+        </div>
+        <label class="zap">
+          <span class="label">Zap strength</span>
+          <span class="end">gentle</span>
+          <input id="zap" type="range" min="0" max="100" value="16">
+          <span class="end">harsh</span>
+        </label>
+        <div class="actions">
+          <button type="button" id="pause" class="plain" aria-pressed="false">Pause</button>
+          <button type="button" id="reset" class="plain">New flies</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel labpanel" aria-labelledby="labhead">
+      <h2 id="labhead">The lab</h2>
+      <p class="note">Ten flies, each born with its own random wiring. Same world, same rules, different brains.</p>
+      <div id="lab" class="lab"></div>
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <h2>What is it like to be a fly?</h2>
+        <div class="eyes">
+          <figure><canvas id="flyview"></canvas><figcaption id="facets">Fly</figcaption></figure>
+          <figure><canvas id="youview"></canvas><figcaption>You</figcaption></figure>
+        </div>
+        <p class="note">Flies barely see red, so his red-and-white stripes look black-and-white, just like the mime's. To a fly, the mime is his shadow.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What it's thinking</h2>
+        <div class="mb"><span id="mbLeft">Left mushroom body</span><canvas id="kcLeft"></canvas></div>
+        <div class="mb"><span id="mbRight">Right mushroom body</span><canvas id="kcRight"></canvas></div>
+        <p class="legend"><span><i class="dot sugar"></i>means sugar</span><span><i class="dot zapdot"></i>means zap</span><span><i class="dot firing"></i>firing now</span></p>
+        <div class="meter">
+          <div class="track"><div id="meterFill" class="fill"></div></div>
+          <div class="scale"><span>avoid</span><span id="chance">Land here?</span><span>approach</span></div>
+        </div>
+        <div class="dans"><span id="pam" class="dan pam">Sugar · PAM</span><span id="ppl1" class="dan ppl1">Zap · PPL1</span></div>
+        <p class="note">Seek sugar, avoid zaps: Freud's pleasure principle, running on <span id="kcTotal">335</span> Kenyon cells. It lands on people who look better than what it's used to.</p>
+        <p class="note" id="dopamine"></p>
+      </section>
+
+      <section class="panel stats">
+        <h2>Scorecard</h2>
+        <dl>
+          <div><dt>Round</dt><dd id="statRound">1</dd></div>
+          <div><dt>Found, last 20</dt><dd id="statFound">–</dd></div>
+          <div><dt>Visits, last 20</dt><dd id="statVisits">–</dd></div>
+          <div><dt>Zaps</dt><dd id="statZaps">0</dd></div>
+        </dl>
+        <p class="note">Whole lab, last 20 rounds each: <strong id="labFound">–</strong> found</p>
+      </section>
+    </aside>
+
+    <section class="panel chartpanel" aria-labelledby="charthead">
+      <h2 id="charthead">He always hides again</h2>
+      <p class="note">People each fly checked before finding him, round by round, averaged over 5 rounds. Lower is better. One must imagine the fly happy.</p>
+      <canvas id="chart" role="img" aria-label="Learning curves for the ten flies"></canvas>
+      <p class="legend"><span><i class="line avg"></i>lab average</span><span><i class="line mine"></i>the fly you're watching</span><span><i class="line others"></i>other flies</span></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Eye and brain cell counts come from the <a href="https://male-cns.janelia.org/">Male CNS connectome</a> by HHMI Janelia, Google Research, and the MRC Laboratory of Molecular Biology and University of Cambridge (CC-BY 4.0). Not affiliated with Where's Waldo.</p>
+  </footer>
+
+  <script src="src/connectome.js"></script>
+  <script src="src/util.js"></script>
+  <script src="src/scene.js"></script>
+  <script src="src/eye.js"></script>
+  <script src="src/brain.js"></script>
+  <script src="src/game.js"></script>
+  <script src="src/ui.js"></script>
+</body>
+</html>
