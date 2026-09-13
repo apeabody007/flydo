@@ -296,7 +296,6 @@ h2 {
 .card.leader .rank { background: var(--ink); color: #fff; }
 .card:hover { border-color: #b9bfc9; }
 .card[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
-.card[data-flash="zap"] { border-color: var(--volt); box-shadow: 0 0 0 2px var(--volt); }
 
 /* When a fly finds him, its card glows green for a second, on a layer of its own so the
    watched-fly outline underneath stays put. */

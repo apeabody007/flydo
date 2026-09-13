@@ -223,8 +223,8 @@
     }
     if (speed === 'turbo') return; // too many to show one by one; turbo refreshes the panels itself
     if (outcome !== 'none') {
-      const found = outcome === 'sugar';
-      fly.flash = { kind: found ? 'found' : 'zap', until: now + (found ? 1000 : 500) };
+      // Only finds light up a lab card; with ten flies, flashing every zap too was a lot.
+      if (outcome === 'sugar') fly.flash = { kind: 'found', until: now + 1000 };
       if (fly.index === focus) pulseDopamine(outcome);
     }
     if (fly.index === focus || fly.game.over) panelsDirty = true;
