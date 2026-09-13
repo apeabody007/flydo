@@ -115,6 +115,14 @@
       });
     }
 
+    // Take on everything another fly has learned. Races use this to copy a lab fly.
+    copyFrom(other) {
+      this.bodies.forEach((body, side) => {
+        body.toApproach.set(other.bodies[side].toApproach);
+        body.toAvoid.set(other.bodies[side].toAvoid);
+      });
+    }
+
     // The real input neuron types doing the most to drive the firing cells right now. For display.
     strongestInputs(view, active, count = 3) {
       const drive = new Map();

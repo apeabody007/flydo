@@ -2,7 +2,7 @@
 
 Ten fruit flies learning to find the striped guy in a crowd.
 
-Each fly sees through an eye with a real fly's facet count and learns with mushroom bodies (the fly brain's learning centers) wired with that fly's real connections, taken from its complete wiring diagram. Land on the striped guy: sugar. Land on anyone else: a zap. Within about ten rounds, the flies go from finding him about 1 time in 8 to about 9 times in 10. You can also make any fly helpless and watch it give up.
+Each fly sees through an eye with a real fly's facet count and learns with mushroom bodies (the fly brain's learning centers) wired with that fly's real connections, taken from its complete wiring diagram. Land on the striped guy: sugar. Land on anyone else: a zap. Within about ten rounds, the flies go from finding him about 1 time in 8 to about 9 times in 10. You can also make any fly helpless and watch it give up, or **race one**: can you find the striped guy faster than a fruit fly's brain?
 
 **Play it:** [apeabody007.github.io/flydo](https://apeabody007.github.io/flydo/) (phones too), or open `index.html` in any browser. There's nothing to install.
 
@@ -87,6 +87,7 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 | **Nature and nurture** | All ten flies have the exact same wiring, copied from one real fly, so every difference between them comes from experience, like identical twins raised apart. Sugar and zaps then rewrite some of those connections. |
 | **The uncanny and the shadow** (Freud and Jung) | The mime is the striped guy's double: the same stripes, drained of color. Freud wrote about the eeriness of doubles, and Jung called the dark side of a person their shadow. |
 | **"What Is It Like to Be a Bat?"** (Nagel, 1974) | The fly's-eye panel: a gray, blurry world of 1,779 dots where red looks black. |
+| **Race the fly** | The fly's search in a race uses its real, learned brain. Its clock is the game's: it takes off after 1.5 seconds and flies from person to person, tuned so races are close. |
 | **Sisyphus** (Camus, 1942) | Every time a fly finds him, he hides again and the search starts over. Camus wrote, "One must imagine Sisyphus happy." |
 
 ## What's real and what's simplified
@@ -101,6 +102,7 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 - **Prove the flies learn:** `node test/learn.test.js` runs 10 learning flies against 10 identical flies that can't learn.
 - **Regenerate the connectome numbers:** `pip install pandas pyarrow`, then `python scripts/extract_counts.py`.
 - **Regenerate the wiring:** `python scripts/extract_wiring.py`. The first run downloads the connectome's full connection list (about 1 GB).
+- **Redraw the link preview image:** `scripts/social-card.html` draws `social-card.png` from the game's own crowd and eye; the Chrome command is at the top of that file.
 
 ## Credits and sources
 

@@ -1052,6 +1052,31 @@
     chartDirty = true;
   });
 
+  // Race the lab's leading fly. One that has barely played isn't much of an opponent, so it gets a
+  // quick warm-up first. The lab pauses while you race.
+  $('raceStart').addEventListener('click', () => {
+    const leader = lab.slice().sort((a, b) => b.game.sugars - a.game.sugars || a.index - b.index)[0];
+    for (let steps = 0; leader.game.sugars < 10 && steps < 20000; steps++) leader.game.step();
+    leader.anim = null; // any visit in progress belongs to a crowd the warm-up moved past
+    panelsDirty = true;
+    chartDirty = true;
+    rankDirty = true;
+    const wasPaused = paused;
+    if (!wasPaused) $('pause').click();
+    const { game } = leader;
+    F.Race.start({
+      name: flyName(leader.index),
+      brain: game.brain,
+      expectation: game.expectation,
+      zapStrength: game.zapStrength,
+      helpless: game.helpless,
+      onClose: () => {
+        if (!wasPaused && paused) $('pause').click();
+        $('raceStart').focus();
+      },
+    });
+  });
+
   $('reset').addEventListener('click', () => {
     newLab();
     setFocus(focus);

@@ -4,15 +4,17 @@
   'use strict';
 
   const MAX_VISITS = 120;    // give up on a round after checking this many people
-  const SCAN_RADIUS = 190;   // how far away the fly considers its next person, in page pixels
+  const SCAN_RADIUS = 190;   // how far away the fly considers its next person, in page pixels (races use less)
   const CHOICE_TEMP = 0.12;  // lower = picks its favourite more reliably
   const RECENT_MEMORY = 20;  // inhibition of return: it skips the last 20 people it checked
   const ADAPTATION = 0.05;   // how quickly "what it's used to" follows its surroundings
   const JITTER = 3;          // it never hovers perfectly centred
 
   class Game {
-    constructor({ seed = (Math.random() * 2 ** 32) >>> 0, zapStrength = 0.4, learning = true, helpless = false } = {}) {
+    constructor({ seed = (Math.random() * 2 ** 32) >>> 0, zapStrength = 0.4, learning = true, helpless = false, scene = {}, scanRadius = SCAN_RADIUS } = {}) {
       this.rand = F.rng(seed);
+      this.scanRadius = scanRadius;
+      this.sceneOptions = scene; // page size and crowd size, for races on small screens
       this.zapStrength = zapStrength;
       this.learning = learning;
       // A helpless fly judges each person only by whether they look safe, not by whether they look
@@ -33,7 +35,7 @@
 
     newRound() {
       this.round++;
-      this.scene = F.Scene.generate(this.rand);
+      this.scene = F.Scene.generate(this.rand, this.sceneOptions);
       this.scene.lum = F.Eye.luminanceMap(this.scene.rgba, this.scene.W, this.scene.H);
       this.codes = new Map(); // which Kenyon cells fire for each person, reused all round
       this.recent = [];
@@ -58,7 +60,7 @@
       const candidates = scene.people.filter((p) => !this.recent.includes(p.id));
       if (!candidates.length) return null;
       const distance = (p) => Math.hypot(p.cx - fly.x, p.cy - fly.y);
-      let nearby = candidates.filter((p) => distance(p) <= SCAN_RADIUS);
+      let nearby = candidates.filter((p) => distance(p) <= this.scanRadius);
       if (!nearby.length) nearby = [candidates.reduce((a, b) => (distance(a) <= distance(b) ? a : b))];
 
       const glances = nearby.map((p) => this.brain.value(this.codeOf(p)));

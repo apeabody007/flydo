@@ -4,11 +4,14 @@
 (function (F) {
   'use strict';
 
-  const W = 960;
-  const H = 600;
+  const WIDTH = 960;   // the lab's page
+  const HEIGHT = 600;
+  const CROWD = 120;
   const SPRITE_W = 18;
   const SPRITE_H = 40;
-  const CROWD = 120;
+  // The page being painted. Generation is synchronous, so each call can set its own size.
+  let W = WIDTH;
+  let H = HEIGHT;
 
   const RED = [214, 38, 38];
   const WHITE = [246, 246, 242];
@@ -151,9 +154,9 @@
   }
 
   // Scatter people so nobody overlaps.
-  function placeCrowd(rand) {
+  function placeCrowd(rand, crowd) {
     const spots = [];
-    for (let tries = 0; spots.length < CROWD && tries < CROWD * 400; tries++) {
+    for (let tries = 0; spots.length < crowd && tries < crowd * 400; tries++) {
       const x = 4 + Math.floor(rand() * (W - SPRITE_W - 8));
       const y = 4 + Math.floor(rand() * (H - SPRITE_H - 8));
       const clear = spots.every((s) => Math.abs(s.x - x) >= SPRITE_W + 6 || Math.abs(s.y - y) >= SPRITE_H + 4);
@@ -165,10 +168,12 @@
   // Everyone after the first seven is a solid-shirt bystander.
   const CAST = ['target', 'mime', 'mime', 'sailor', 'sailor', 'referee', 'referee'];
 
-  function generate(rand) {
+  function generate(rand, { width = WIDTH, height = HEIGHT, crowd = CROWD } = {}) {
+    W = width;
+    H = height;
     const rgba = new Uint8ClampedArray(W * H * 4);
     paintGround(rgba, rand);
-    const people = placeCrowd(rand).map((spot, id) => {
+    const people = placeCrowd(rand, crowd).map((spot, id) => {
       const type = CAST[id] || 'solid';
       return {
         id, type, x: spot.x, y: spot.y,
@@ -180,5 +185,5 @@
     return { W, H, rgba, people, target: people[0] };
   }
 
-  F.Scene = { W, H, SPRITE_W, SPRITE_H, generate };
+  F.Scene = { W: WIDTH, H: HEIGHT, SPRITE_W, SPRITE_H, generate };
 })(globalThis.FLYDO = globalThis.FLYDO || {});

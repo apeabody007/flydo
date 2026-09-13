@@ -4,7 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Where's Fly-do?</title>
-  <meta name="description" content="Ten fruit flies learn to find the striped guy, using eye and brain cell counts from a real fly's complete wiring diagram.">
+  <meta name="description" content="Race a fruit fly's brain at finding the striped guy. Ten flies, wired from a real fly's connectome, learn by trial and error.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪰</text></svg>">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Where's Fly-do?">
+  <meta property="og:url" content="https://apeabody007.github.io/flydo/">
+  <meta property="og:title" content="Where's Fly-do? Can you beat a fruit fly's brain?">
+  <meta property="og:description" content="Race a fruit fly, wired from a real fly's connectome, to find the striped guy. Then give one learned helplessness and watch it recover.">
+  <meta property="og:image" content="https://apeabody007.github.io/flydo/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A pixel-art crowd with a fruit fly searching it, and the striped guy seen through human eyes next to a fly's gray compound eye.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Where's Fly-do? Can you beat a fruit fly's brain?">
+  <meta name="twitter:description" content="Race a fruit fly, wired from a real fly's connectome, to find the striped guy.">
+  <meta name="twitter:image" content="https://apeabody007.github.io/flydo/social-card.png">
+  <meta name="twitter:image:alt" content="A pixel-art crowd with a fruit fly searching it, and the striped guy seen through human eyes next to a fly's gray compound eye.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
@@ -14,6 +29,10 @@
   <header class="masthead">
     <h1>Where's Fly-do?</h1>
     <p class="lede">Ten fruit flies learning to find the striped guy. Each one sees through an eye with a real fly's facet count and learns with mushroom bodies wired from that fly's real connectome. Land on him: sugar. Land on anyone else: a zap.</p>
+    <div class="cta">
+      <button type="button" id="raceStart" class="primary">Race a fly</button>
+      <span>Can you find the striped guy faster than a fruit fly's brain?</span>
+    </div>
   </header>
 
   <main class="layout">
@@ -125,6 +144,38 @@
     <p>Eye and brain cell counts come from the <a href="https://male-cns.janelia.org/">Male CNS connectome</a> by HHMI Janelia, Google Research, and the MRC Laboratory of Molecular Biology and University of Cambridge (CC-BY 4.0). Not affiliated with Where's Waldo.</p>
   </footer>
 
+  <div id="race" class="race" hidden>
+    <div class="race-box" role="dialog" aria-modal="true" aria-labelledby="raceTitle">
+      <div class="race-head">
+        <h2 id="raceTitle">Race a fly</h2>
+        <button type="button" id="raceClose" class="plain">Back to the lab</button>
+      </div>
+      <p id="raceIntro" class="note"></p>
+      <div class="race-hud">
+        <div class="hud"><span class="hud-label">You</span><span id="raceYou" class="hud-value">0.0s</span><span id="racePenalty" class="hud-penalty" hidden>+2s</span></div>
+        <div class="hud"><span id="raceFlyLabel" class="hud-label">The fly</span><span id="raceFly" class="hud-value">ready</span></div>
+      </div>
+      <div class="race-frame">
+        <canvas id="raceCanvas" aria-label="The race crowd. Find the person in the red-and-white striped shirt and bobble hat."></canvas>
+        <div id="raceCountdown" class="race-countdown" hidden>3</div>
+      </div>
+      <div class="race-foot">
+        <button type="button" id="raceSkip" class="plain" hidden>Show the fly's time</button>
+        <button type="button" id="raceGiveUp" class="plain">I give up</button>
+      </div>
+      <div id="raceResult" class="race-result" hidden>
+        <p id="raceHeadline" class="race-headline"></p>
+        <p id="raceTimes" class="race-times"></p>
+        <p id="raceDetail" class="note"></p>
+        <div class="race-actions">
+          <a id="raceShareX" class="primary" href="#" target="_blank" rel="noopener">Post on X</a>
+          <button type="button" id="raceShare" class="plain" hidden>Share</button>
+          <button type="button" id="raceAgain" class="plain">Race again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="src/connectome.js"></script>
   <script src="src/util.js"></script>
   <script src="src/scene.js"></script>
@@ -132,6 +183,7 @@
   <script src="src/wiring.js"></script>
   <script src="src/brain.js"></script>
   <script src="src/game.js"></script>
+  <script src="src/race.js"></script>
   <script src="src/ui.js"></script>
 </body>
 </html>

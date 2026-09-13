@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  The link preview image (social-card.png, 1200x630), drawn with the game's own crowd and eye.
+  To regenerate, serve the repo root (python3 -m http.server 8000) and run:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars \
+      --window-size=1200,630 --virtual-time-budget=8000 --screenshot=social-card.png \
+      http://localhost:8000/scripts/social-card.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Where's Fly-do? preview card</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@700&display=block">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #16181d; }
+  #crowd { position: absolute; inset: 0; width: 1200px; height: 630px; image-rendering: pixelated; }
+  .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(22,24,29,.94) 0%, rgba(22,24,29,.88) 46%, rgba(22,24,29,.25) 66%, rgba(22,24,29,0) 78%); }
+  .words { position: absolute; left: 64px; top: 84px; width: 610px; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { margin: 0; display: inline-block; padding-bottom: 18px; font: 700 64px/1 "Pixelify Sans", monospace; white-space: nowrap;
+       background: linear-gradient(#d62626 0 5px, #fff 5px 10px, #d62626 10px 15px) left bottom / 100% 15px no-repeat; }
+  .hook { margin: 36px 0 0; font-size: 54px; font-weight: 800; line-height: 1.08; letter-spacing: -0.01em; }
+  .sub { margin: 20px 0 0; font-size: 25px; line-height: 1.35; color: #c9ced8; }
+  .url { margin: 26px 0 0; font: 600 24px/1 ui-monospace, "SF Mono", Menlo, monospace; color: #e9a21b; }
+  .eye { position: absolute; width: 236px; text-align: center; font: 700 22px/1 system-ui, sans-serif; color: #fff; }
+  .eye canvas { display: block; width: 236px; height: 236px; border-radius: 50%; box-shadow: 0 0 0 7px #fff, 0 18px 40px rgba(0,0,0,.45); }
+  .eye span { display: inline-block; margin-top: 18px; padding: 7px 14px; border-radius: 999px; background: rgba(22,24,29,.85); }
+</style>
+</head>
+<body>
+  <canvas id="crowd" width="1200" height="630"></canvas>
+  <div class="shade"></div>
+  <div class="words">
+    <h1>Where's Fly-do?</h1>
+    <p class="hook">Can you find him faster than a fruit fly's brain?</p>
+    <p class="sub">Fruit flies wired from a real fly connectome learn to find the striped guy. Race one.</p>
+    <p class="url">apeabody007.github.io/flydo</p>
+  </div>
+  <div class="eye" style="left: 700px; top: 150px;"><canvas id="you" width="472" height="472"></canvas><span>You see</span></div>
+  <div class="eye" style="left: 948px; top: 150px;"><canvas id="fly" width="472" height="472"></canvas><span>A fly sees</span></div>
+
+  <script src="../src/connectome.js"></script>
+  <script src="../src/util.js"></script>
+  <script src="../src/scene.js"></script>
+  <script src="../src/eye.js"></script>
+  <script>
+    const F = globalThis.FLYDO;
+    const scene = F.Scene.generate(F.rng(7));
+    scene.lum = F.Eye.luminanceMap(scene.rgba, scene.W, scene.H);
+    const page = document.createElement('canvas');
+    page.width = scene.W;
+    page.height = scene.H;
+    page.getContext('2d').putImageData(new ImageData(scene.rgba, scene.W, scene.H), 0, 0);
+
+    const crowd = document.getElementById('crowd').getContext('2d');
+    crowd.imageSmoothingEnabled = false;
+    crowd.drawImage(page, 0, -60, 1200, 750);
+
+    // Both views are centred on the striped guy, covering the patch the fly's eye takes in.
+    const target = scene.target;
+    const reach = F.Eye.reach + F.Eye.SPACING;
+    const you = document.getElementById('you').getContext('2d');
+    you.imageSmoothingEnabled = false;
+    you.drawImage(page, target.cx - reach, target.cy - reach, 2 * reach, 2 * reach, 0, 0, 472, 472);
+
+    const fly = document.getElementById('fly').getContext('2d');
+    const view = F.Eye.look(scene, target.cx, target.cy);
+    const scale = 472 / (2 * reach);
+    const r = (F.Eye.SPACING / Math.sqrt(3)) * scale * 0.9;
+    fly.fillStyle = '#16181d';
+    fly.fillRect(0, 0, 472, 472);
+    F.Eye.facets.forEach((f, i) => {
+      const g = Math.round(view.lum[i] * 255);
+      fly.fillStyle = `rgb(${g},${g},${g})`;
+      fly.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = -Math.PI / 2 + (k * Math.PI) / 3;
+        const x = 236 + f.x * scale + r * Math.cos(a);
+        const y = 236 + f.y * scale + r * Math.sin(a);
+        if (k === 0) fly.moveTo(x, y); else fly.lineTo(x, y);
+      }
+      fly.fill();
+    });
+    document.fonts.ready.then(() => { document.body.dataset.ready = '1'; });
+  </script>
+</body>
+</html>
