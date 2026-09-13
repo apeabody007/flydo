@@ -494,11 +494,13 @@ body.racing { overflow: hidden; }
   padding: 24px;
   overflow-y: auto;
   background: rgba(22, 24, 29, 0.55);
+  cursor: pointer; /* the dimmed lab closes the race */
 }
 
 .race[hidden] { display: none; }
 
 .race-box {
+  cursor: auto;
   width: min(1000px, 100%);
   padding: 16px 18px 18px;
   border-radius: 14px;
@@ -542,7 +544,7 @@ body.racing { overflow: hidden; }
   justify-content: center;
   background: #e8dcb0;
   color: var(--ink);
-  font: 700 96px/1 var(--display);
+  font: 140px/1 "Press Start 2P", var(--display); /* arcade digits; Pixelify's 2 looked squashed this big */
 }
 
 .race-countdown[hidden] { display: none; }
@@ -564,7 +566,7 @@ body.racing { overflow: hidden; }
 @media (max-width: 640px) {
   .race { padding: 0; background: var(--paper); }
   .race-box { min-height: 100%; border-radius: 0; padding: 12px; }
-  .race-countdown { font-size: 72px; }
+  .race-countdown { font-size: 96px; }
   .hud-value { font-size: 18px; }
 }
 

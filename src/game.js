@@ -7,6 +7,8 @@
   const SCAN_RADIUS = 190;   // how far away the fly considers its next person, in page pixels (races use less)
   const CHOICE_TEMP = 0.12;  // lower = picks its favourite more reliably
   const RECENT_MEMORY = 20;  // inhibition of return: it skips the last 20 people it checked
+  const NOVELTY = 0.2;       // someone it hasn't checked yet this round looks this much more appealing
+  const RESTLESS_AFTER = 8;  // after this many rechecks in a row, it heads for someone new
   const ADAPTATION = 0.05;   // how quickly "what it's used to" follows its surroundings
   const JITTER = 3;          // it never hovers perfectly centred
 
@@ -39,6 +41,8 @@
       this.scene.lum = F.Eye.luminanceMap(this.scene.rgba, this.scene.W, this.scene.H);
       this.codes = new Map(); // which Kenyon cells fire for each person, reused all round
       this.recent = [];
+      this.seen = new Set();  // everyone it has checked this round
+      this.rechecks = 0;      // checks in a row of people it had already seen
       this.zapped = [];
       this.visits = 0;
       this.wrong = 0;
@@ -62,9 +66,15 @@
       const distance = (p) => Math.hypot(p.cx - fly.x, p.cy - fly.y);
       let nearby = candidates.filter((p) => distance(p) <= this.scanRadius);
       if (!nearby.length) nearby = [candidates.reduce((a, b) => (distance(a) <= distance(b) ? a : b))];
+      // Going back to promising people is how it recovers from flying past him, but without a pull
+      // toward the unexplored it can circle one busy area all round and never search the rest.
+      const unchecked = candidates.filter((p) => !this.seen.has(p.id));
+      if (this.rechecks >= RESTLESS_AFTER && unchecked.length) {
+        nearby = [unchecked.reduce((a, b) => (distance(a) <= distance(b) ? a : b))];
+      }
 
       const glances = nearby.map((p) => this.brain.value(this.codeOf(p)));
-      const appeal = glances.map((v) => Math.exp(v / CHOICE_TEMP));
+      const appeal = glances.map((v, i) => Math.exp((v + (this.seen.has(nearby[i].id) ? 0 : NOVELTY)) / CHOICE_TEMP));
       let roll = rand() * appeal.reduce((a, b) => a + b, 0);
       let person = nearby[nearby.length - 1];
       for (let i = 0; i < nearby.length; i++) {
@@ -94,6 +104,8 @@
         this.visits++;
         this.recent.push(plan.person.id);
         if (this.recent.length > RECENT_MEMORY) this.recent.shift();
+        this.rechecks = this.seen.has(plan.person.id) ? this.rechecks + 1 : 0;
+        this.seen.add(plan.person.id);
         this.expectation += ADAPTATION * (plan.surroundings - this.expectation);
         this.fly = { x: plan.hx, y: plan.hy };
         if (plan.lands) {

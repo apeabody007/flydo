@@ -84,6 +84,7 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 | **Adaptation level** (Helson, 1964) | Part of the fix. A fly now lands on people who look better than what it's used to, not just people who look safe. |
 | **Inhibition of return** (Posner and Cohen, 1984) | The other part. Like human attention, a fly skips the last 20 people it checked but can come back to anyone after that. With sparser firing and a few search tweaks, these took the flies from 4% to over 90%. |
 | **Punishment** | Harsher zaps never made the flies better. They just made them slower. The gentlest flies did best. |
+| **Exploration vs. exploitation** | Going back to people who looked promising is how a fly recovers after flying past him. But a fly that only did that could circle one busy part of the page and never search the rest. So people it hasn't checked yet look a little more appealing, and after 8 rechecks in a row it heads for someone new. In races, the share of give-ups where the fly never even checked him fell from 35% to almost none. |
 | **Nature and nurture** | All ten flies have the exact same wiring, copied from one real fly, so every difference between them comes from experience, like identical twins raised apart. Sugar and zaps then rewrite some of those connections. |
 | **The uncanny and the shadow** (Freud and Jung) | The mime is the striped guy's double: the same stripes, drained of color. Freud wrote about the eeriness of doubles, and Jung called the dark side of a person their shadow. |
 | **"What Is It Like to Be a Bat?"** (Nagel, 1974) | The fly's-eye panel: a gray, blurry world of 1,779 dots where red looks black. |
@@ -94,7 +95,7 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 
 **Real:** the cell counts above; which real visual neurons connect to each visual Kenyon cell, and with how many synapses; each Kenyon cell's real connections onto approach and avoid output neurons; flies' weak red vision; sparse Kenyon cell firing; and dopamine weakening whichever Kenyon cell connections were just active (sugar weakens the pull to avoid, punishment weakens the pull to approach). Learning is fast, which fits real flies: they can form a lasting memory from a single training session with sugar.
 
-**Simplified:** the fly looks straight down at a flat page. The optic lobes' processing is replaced by four simple measures per patch, and what each real input neuron reports is picked per neuron: one of those measures, from one small patch of its eye. (Giving neurons wide fields of view blurred the brain's codes, and the flies found him 66% of the time instead of 91%.) Output neurons are pooled into approach and avoid instead of being simulated one by one.
+**Simplified:** the fly looks straight down at a flat page. The optic lobes' processing is replaced by four simple measures per patch, and what each real input neuron reports is picked per neuron: one of those measures, from one small patch of its eye. (Giving neurons wide fields of view blurred the brain's codes, and the flies found him 66% of the time instead of about 90%.) Output neurons are pooled into approach and avoid instead of being simulated one by one.
 
 ## Run it
 

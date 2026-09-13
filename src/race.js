@@ -50,7 +50,7 @@
       checks.push({ from, start, arrive, looked, at, plan, outcome });
       from = { x: plan.hx, y: plan.hy };
     }
-    return { checks, done: { at, found: game.found, people: checks.length } };
+    return { checks, done: { at, found: game.found, people: game.seen.size } };
   }
 
   const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
@@ -134,7 +134,7 @@
       if (elapsed >= r.fly.at) {
         $('raceFly').textContent = r.fly.found ? `found him · ${secs(r.fly.at)}` : `gave up after ${r.fly.people} people`;
       } else {
-        const checked = r.checks.filter((c) => c.at <= elapsed).length;
+        const checked = new Set(r.checks.filter((c) => c.at <= elapsed).map((c) => c.plan.person.id)).size;
         $('raceFly').textContent = `checked ${checked} ${checked === 1 ? 'person' : 'people'}`;
       }
       if (r.you && elapsed >= r.fly.at) finish();
@@ -325,6 +325,15 @@
 
   $('raceCanvas').addEventListener('pointerdown', tap);
   $('raceClose').addEventListener('click', close);
+  // Clicking the dimmed lab around the race also closes it, but only when the press started there
+  // too, so dragging out of the race by accident doesn't end it.
+  let pressedBackdrop = false;
+  $('race').addEventListener('pointerdown', (e) => {
+    pressedBackdrop = e.target === e.currentTarget;
+  });
+  $('race').addEventListener('click', (e) => {
+    if (pressedBackdrop && e.target === e.currentTarget) close();
+  });
   $('raceGiveUp').addEventListener('click', finish);
   $('raceSkip').addEventListener('click', finish);
   $('raceAgain').addEventListener('click', () => {
@@ -335,6 +344,9 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && race) close();
   });
+
+  // Fetch the countdown font now, so the first race doesn't flash a fallback "3".
+  if (document.fonts) document.fonts.load('64px "Press Start 2P"').catch(() => {});
 
   F.Race = { start };
 })(globalThis.FLYDO = globalThis.FLYDO || {});

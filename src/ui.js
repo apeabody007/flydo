@@ -985,11 +985,13 @@
     chartDirty = true;
   });
 
-  // Race the lab's leading fly. One that has barely played isn't much of an opponent, so it gets a
-  // quick warm-up first. The lab pauses while you race.
+  // Race the lab's leading fly. A helpless one barely tries, so it races the best fly that isn't,
+  // unless every fly is helpless. One that has barely played gets a quick warm-up first (capped, so
+  // the page never stalls). The lab pauses while you race.
   $('raceStart').addEventListener('click', () => {
-    const leader = lab.slice().sort((a, b) => b.game.sugars - a.game.sugars || a.index - b.index)[0];
-    for (let steps = 0; leader.game.sugars < 10 && steps < 20000; steps++) leader.game.step();
+    const ranked = lab.slice().sort((a, b) => b.game.sugars - a.game.sugars || a.index - b.index);
+    const leader = ranked.find((fly) => !fly.game.helpless) || ranked[0];
+    for (let steps = 0; leader.game.sugars < 10 && steps < 6000; steps++) leader.game.step();
     leader.anim = null; // any visit in progress belongs to a crowd the warm-up moved past
     panelsDirty = true;
     chartDirty = true;
