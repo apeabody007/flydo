@@ -1,10 +1,22 @@
-# Where's Fly-do?
+<h1 align="center">Where's Fly-do?</h1>
 
-Ten fruit flies learning to find the striped guy in a crowd.
+<p align="center"><strong>Ten fruit flies, wired from a real fly's connectome, learn to find the striped guy. Then you race one.</strong></p>
 
-Each fly sees through an eye with a real fly's facet count and learns with mushroom bodies (the fly brain's learning centers) wired with that fly's real connections, taken from its complete wiring diagram. Land on the striped guy: sugar. Land on anyone else: a zap. Within about ten rounds, the flies go from finding him about 1 time in 8 to about 9 times in 10. You can also make any fly helpless and watch it give up, or **race one**: can you find the striped guy faster than a fruit fly's brain?
+<p align="center">
+  <a href="https://apeabody007.github.io/flydo/"><strong>▶ Play it in your browser</strong></a> (phones too)
+</p>
 
-**Play it:** [apeabody007.github.io/flydo](https://apeabody007.github.io/flydo/) (phones too), or open `index.html` in any browser. There's nothing to install.
+<p align="center">
+  <a href="https://male-cns.janelia.org/"><img alt="Data: Male CNS connectome v1.0" src="https://img.shields.io/badge/data-male_CNS_connectome_v1.0-3b5bff?style=flat-square"></a>
+  <a href="#run-it"><img alt="Build step: none" src="https://img.shields.io/badge/build_step-none-22c55e?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-16181d?style=flat-square"></a>
+</p>
+
+<p align="center">
+  <a href="https://apeabody007.github.io/flydo/"><img src="assets/lab.gif" width="100%" alt="Fly E searches a pixel-art crowd for the striped guy. Beside the crowd, the fly's gray compound-eye view, your view, and its Kenyon cells firing. It finds him in 11 visits."></a>
+</p>
+
+Each fly sees through an eye with a real fly's facet count and learns with mushroom bodies (the fly brain's learning centers) wired with that fly's real connections, taken from its complete wiring diagram. Land on the striped guy: sugar. Land on anyone else: a zap. Flies that can't learn find him about 1 time in 8. Flies that learn pass 8 in 10 within about ten rounds and settle at 9 in 10. You can also make any fly helpless and watch it give up, or **race one**: can you find the striped guy faster than a fruit fly's brain?
 
 ## Why I built this
 
@@ -36,15 +48,35 @@ I believe this is the start of something much bigger. Wiring diagrams have gone 
 
 ## How a fly works
 
-```
-eye: 886 + 893 facets, nearly blind to red
-  -> 253 real visual neurons (143 types), each reporting brightness, darkness or stripes from one patch of its eye
-    -> 17,890 real synapses onto the visual Kenyon cells: 163 left, 172 right; the APL neuron lets about 5% fire
-      -> the cells' real connections onto output neurons that push toward approach or avoid
-        -> dopamine: sugar (PAM neurons) or a zap (PPL1 neurons) weakens the connections that were just active
+```mermaid
+flowchart TD
+    eye["Compound eye<br/>886 + 893 facets,<br/>nearly blind to red"]
+    vpn["253 real visual neurons<br/>of 143 types"]
+    apl["APL neuron"]
+    zap["Landed on anyone else?<br/>Zap: PPL1 dopamine<br/>weakens the approach<br/>synapses that just fired"]
+    kc["335 visual Kenyon cells<br/>163 left, 172 right"]
+    sugar["Found the striped guy?<br/>Sugar: PAM dopamine<br/>weakens the avoid<br/>synapses that just fired"]
+    approach["Output neurons that<br/>push toward approach"]
+    avoid["Output neurons that<br/>push toward avoid"]
+    land{"Land here?"}
+
+    eye --> vpn
+    vpn -->|"17,890 real synapses"| kc
+    apl -.->|"lets about 5% fire"| kc
+    zap -.-> approach
+    kc -->|"10,816 real synapses"| approach
+    kc -->|"27,458 real synapses"| avoid
+    sugar -.-> avoid
+    approach --> land
+    avoid --> land
+
+    classDef zap fill:#e6eaff,stroke:#3b5bff,color:#16181d
+    classDef sugar fill:#fdf1d8,stroke:#e9a21b,color:#16181d
+    class zap zap
+    class sugar sugar
 ```
 
-Each turn, a fly glances at everyone nearby, flies to whoever looks most like past sugar, looks closely, and lands if that person looks better than what it's used to.
+Each real visual neuron reports brightness, darkness or stripes from one patch of its eye. Each turn, a fly glances at everyone nearby, flies to whoever looks most like past sugar, looks closely, and lands if that person looks better than what it's used to.
 
 ### Numbers from the real fly
 
@@ -72,6 +104,23 @@ Nobody hand-labeled the output neurons. Each one is sorted by the dopamine neuro
 - **Referees:** vertical stripes, so the fly has to notice which way the stripes run.
 - **Everyone else:** solid shirts, including plenty of red ones that look dark to a fly.
 
+## Does it actually learn?
+
+<p align="center"><img src="assets/learning-curve.svg" width="100%" alt="Line chart over 100 rounds. Ten flies that learn pass 80% by round 9 and find him 90% of the time over rounds 51 to 100. Ten identical flies that can't learn stay around 12%."></p>
+
+Yes, and you can check it in seconds. `node test/learn.test.js` runs 10 flies that learn against 10 identical flies whose synapses never change, 100 rounds each, and scores the last 50:
+
+```text
+10 flies each, 100 rounds, scored on the last 50
+  learning flies:        90% found, 43.0 visits per round
+  flies that can't learn: 12% found, 114.1 visits per round
+PASS  learning flies find him far more often
+PASS  learning flies need less than half the visits
+PASS  the worst learning fly (82%) beats the best fly that can't learn (24%)
+```
+
+A fly gives up on a round after checking 120 people, so the flies that can't learn usually run out of tries. Every run is seeded, so you'll get the same numbers.
+
 ## Psychology and philosophy in the machine
 
 Some of these ideas are built into how the flies work. Others are ways of looking at what they do.
@@ -82,7 +131,7 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 | **Freud's pleasure principle** | Seek pleasure, avoid pain. Every glance is scored on a single scale from avoid to approach. |
 | **Learned helplessness** (Seligman and Maier, 1967) | Our first version got zapped so often that it came to expect a zap from everyone, stopped landing, and never found out it could succeed. It found the striped guy 4% of the time, a lot like learned helplessness. **Try it:** the "Make Fly A helpless" button switches a fly back to that rule. It almost stops landing and its success slides; switch it back and it recovers within a few rounds. |
 | **Adaptation level** (Helson, 1964) | Part of the fix. A fly now lands on people who look better than what it's used to, not just people who look safe. |
-| **Inhibition of return** (Posner and Cohen, 1984) | The other part. Like human attention, a fly skips the last 20 people it checked but can come back to anyone after that. With sparser firing and a few search tweaks, these took the flies from 4% to over 90%. |
+| **Inhibition of return** (Posner and Cohen, 1984) | The other part. Like human attention, a fly skips the last 20 people it checked but can come back to anyone after that. With sparser firing and a few search tweaks, these took the flies from 4% to about 90%. |
 | **Punishment** | Harsher zaps never made the flies better. They just made them slower. The gentlest flies did best. |
 | **Exploration vs. exploitation** | Going back to people who looked promising is how a fly recovers after flying past him. But a fly that only did that could circle one busy part of the page and never search the rest. So people it hasn't checked yet look a little more appealing, and after 8 rechecks in a row it heads for someone new. In races, the share of give-ups where the fly never even checked him fell from 35% to almost none. |
 | **Nature and nurture** | All ten flies have the exact same wiring, copied from one real fly, so every difference between them comes from experience, like identical twins raised apart. Sugar and zaps then rewrite some of those connections. |
@@ -101,9 +150,28 @@ Some of these ideas are built into how the flies work. Others are ways of lookin
 
 - **Play:** open `index.html`. There's no build step.
 - **Prove the flies learn:** `node test/learn.test.js` runs 10 learning flies against 10 identical flies that can't learn.
+- **Redraw the learning curve:** `node scripts/learning-curve.js` runs the same flies and writes `assets/learning-curve.svg`.
 - **Regenerate the connectome numbers:** `pip install pandas pyarrow`, then `python scripts/extract_counts.py`.
 - **Regenerate the wiring:** `python scripts/extract_wiring.py`. The first run downloads the connectome's full connection list (about 1 GB).
 - **Redraw the link preview image:** `scripts/social-card.html` draws `social-card.png` from the game's own crowd and eye; the Chrome command is at the top of that file.
+
+### What's where
+
+```text
+index.html, style.css   the page
+src/eye.js              compound eye: 1,779 facets, 12 patches × 4 measures per eye
+src/wiring.js           real visual neuron → Kenyon cell synapses (generated)
+src/connectome.js       cell counts from the connectome (generated)
+src/brain.js            mushroom bodies: Kenyon cells, APL, approach and avoid, dopamine
+src/game.js             one fly's search: glance, choose, look, land, learn
+src/scene.js            the crowd
+src/race.js             racing a fly
+src/ui.js               the lab, the panels and the chart
+src/sprite.js           the pixel fly
+src/util.js             seeded random numbers
+test/learn.test.js      learning flies vs. identical flies that can't learn
+scripts/                connectome extraction, the learning curve, the preview image
+```
 
 ## Credits and sources
 

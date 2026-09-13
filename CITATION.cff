@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Where's Fly-do?, please cite it as below. Please also cite the Male CNS connectome, which its cell counts and wiring come from (see the README's credits)."
+type: software
+title: "Where's Fly-do?"
+abstract: "A browser game in which ten simulated fruit flies, wired with visual inputs and mushroom body connections from the Drosophila male CNS connectome, learn through dopamine-gated plasticity to find a striped figure in a crowd."
+authors:
+  - given-names: Aaron
+    family-names: Peabody
+license: MIT
+repository-code: "https://github.com/apeabody007/flydo"
+url: "https://apeabody007.github.io/flydo/"
+keywords:
+  - connectome
+  - Drosophila
+  - mushroom body
+  - dopamine
+  - associative learning
+  - psychology

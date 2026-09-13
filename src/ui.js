@@ -14,7 +14,7 @@
   const zapStrength = () => 0.1 + (1.9 * Number($('zap').value)) / 100;
   const flyName = (i) => `Fly ${String.fromCharCode(65 + i)}`; // letters, so names never look like places
   const WINDOW = 10;       // rounds; every "how often it finds him" number on the page uses this window
-  const CANT_LEARN = 0.11; // share found by flies with learning switched off, measured by test/learn.test.js
+  const CANT_LEARN = 0.12; // share found by flies with learning switched off, measured by test/learn.test.js
   const pct = (x) => `${Math.round(x * 100)}%`;
 
   let speed = 'fast';
