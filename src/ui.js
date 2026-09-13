@@ -9,7 +9,6 @@
   const FLIES = 10;
   const DURATION = { fly: 520, hover: 420, land: 200, zap: 650, sugar: 1200, miss: 1100 }; // ms at Normal speed
   const PACE = { normal: 1, fast: 0.25 };
-  const FLY_SIZE = 2.6;
   const RERANK_EVERY = 900;  // ms; often enough to feel live, calm enough to click a card
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const zapStrength = () => 0.1 + (1.9 * Number($('zap').value)) / 100;
@@ -306,8 +305,8 @@
     if (anim && anim.plan && (phase === 'hover' || phase === 'land')) drawFootprint(ctx, anim.plan.hx, anim.plan.hy);
     if (phase === 'miss') drawRing(ctx, game.scene.target, C.red, now);
     if (phase === 'sugar') drawReward(ctx, game.scene.target, progress(anim, now), now);
-    drawFly(ctx, poseOf(fly, now), now);
-    if (phase === 'zap') popText(ctx, 'zap', anim.plan.hx, anim.plan.hy - 30 - progress(anim, now) * 10, C.volt);
+    F.Sprite.fly(ctx, poseOf(fly, now), now);
+    if (phase === 'zap') F.Sprite.popText(ctx, 'zap', anim.plan.hx, anim.plan.hy - 30 - progress(anim, now) * 10, C.volt);
   }
 
   function poseOf(fly, now) {
@@ -367,58 +366,6 @@
     return a.x !== b.x || a.y !== b.y ? Math.atan2(b.y - a.y, b.x - a.x) : fallback;
   }
 
-  function ellipse(ctx, x, y, rx, ry) {
-    ctx.beginPath();
-    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFly(ctx, pose, now) {
-    ctx.save();
-    ctx.translate(pose.x, pose.y);
-    ctx.rotate(pose.heading);
-    ctx.scale(FLY_SIZE * pose.scale, FLY_SIZE * pose.scale);
-    ctx.strokeStyle = '#2b2419';
-    ctx.lineWidth = 0.6;
-    for (const side of [-1, 1]) {
-      for (const [x0, x1, y1] of [[2.6, 5.2, 4.2], [1.2, 1.2, 4.8], [-0.2, -3, 4.4]]) {
-        ctx.beginPath();
-        ctx.moveTo(x0, side * 1.4);
-        ctx.lineTo(x1, side * y1);
-        ctx.stroke();
-      }
-    }
-    ctx.fillStyle = '#5a4630'; // abdomen, with its dark bands
-    ellipse(ctx, -3.8, 0, 4.2, 2.6);
-    ctx.strokeStyle = 'rgba(24, 16, 8, 0.75)';
-    ctx.lineWidth = 0.7;
-    for (const x of [-2.4, -4, -5.6]) {
-      ctx.beginPath();
-      ctx.moveTo(x, -2.2);
-      ctx.lineTo(x, 2.2);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#8a6a44'; // thorax and head
-    ellipse(ctx, 1.2, 0, 2.6, 2.3);
-    ellipse(ctx, 4.2, 0, 1.7, 1.9);
-    ctx.fillStyle = C.red; // red compound eyes that can barely see red
-    ellipse(ctx, 4.6, -1.35, 1.2, 1);
-    ellipse(ctx, 4.6, 1.35, 1.2, 1);
-    const flap = pose.wings ? Math.sin(now / 16) * 0.35 : 0;
-    ctx.fillStyle = 'rgba(205, 220, 240, 0.6)';
-    ctx.strokeStyle = 'rgba(40, 50, 70, 0.5)';
-    ctx.lineWidth = 0.4;
-    for (const side of [-1, 1]) {
-      ctx.save();
-      ctx.translate(0.6, side * 1.2);
-      ctx.rotate(Math.PI - side * (0.42 + flap));
-      ellipse(ctx, 4.6, 0, 5.2, 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-    ctx.restore();
-  }
-
   // The part of the page its eye covers, and the patch its visual projection neurons pool.
   function drawFootprint(ctx, x, y) {
     ctx.save();
@@ -476,21 +423,7 @@
       ctx.fill();
     }
     ctx.restore();
-    popText(ctx, 'sugar', person.cx, person.cy - 42 - u * 8, C.honey);
-  }
-
-  function popText(ctx, text, x, y, color) {
-    ctx.save();
-    ctx.font = '700 15px "Pixelify Sans", ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#fff';
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = color;
-    ctx.fillText(text, x, y);
-    ctx.restore();
+    F.Sprite.popText(ctx, 'sugar', person.cx, person.cy - 42 - u * 8, C.honey);
   }
 
   // ---------- lab cards ----------

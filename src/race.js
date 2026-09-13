@@ -1,6 +1,6 @@
 // Race the fly: you and a copy of the lab's leading fly search the same fresh crowd. The fly's
-// whole search is worked out up front with its real brain, then played back in real time while
-// you look for the striped guy yourself. Its position stays hidden, so you can't just follow it.
+// whole search is worked out up front with its real brain, then played back in real time on the
+// crowd while you look for the striped guy yourself.
 (function (F) {
   'use strict';
 
@@ -16,7 +16,7 @@
   const TAP_SLOP = 5;        // page pixels of forgiveness around each person
   const DESKTOP = { width: 960, height: 600, crowd: 120 };
   const PHONE = { width: 480, height: 640, crowd: 60 }; // bigger people on small screens
-  const COLORS = { ink: '#16181d', red: '#d62626', honey: '#e9a21b', green: '#22c55e' };
+  const COLORS = { ink: '#16181d', red: '#d62626', honey: '#e9a21b', green: '#22c55e', volt: '#3b5bff' };
 
   const $ = (id) => document.getElementById(id);
   const secs = (ms) => `${(ms / 1000).toFixed(1)}s`;
@@ -33,20 +33,51 @@
     return { x: 0, y: t - 2 * W - H };
   }
 
-  // Play the fly's search forward until it lands on him or gives up, noting when each check ends.
+  // Play the fly's search forward until it lands on him or gives up. Each check records when the
+  // fly sets off, arrives, finishes looking, and (after any zap) is ready to move on.
   function planSearch(game) {
     const checks = [];
     let at = TAKEOFF_MS;
-    let from = game.fly;
+    let from = { x: game.fly.x, y: game.fly.y };
     while (!game.over) {
       const plan = game.plan();
       const outcome = game.commit(plan);
       if (!plan) break;
-      at += LOOK_MS + (Math.hypot(plan.hx - from.x, plan.hy - from.y) / FLIGHT_PX_S) * 1000 + (outcome === 'zap' ? ZAP_MS : 0);
+      const start = at;
+      const arrive = start + (Math.hypot(plan.hx - from.x, plan.hy - from.y) / FLIGHT_PX_S) * 1000;
+      const looked = arrive + LOOK_MS;
+      at = looked + (outcome === 'zap' ? ZAP_MS : 0);
+      checks.push({ from, start, arrive, looked, at, plan, outcome });
       from = { x: plan.hx, y: plan.hy };
-      checks.push({ at, plan, outcome });
     }
     return { checks, done: { at, found: game.found, people: checks.length } };
+  }
+
+  const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+  // Where the fly is, and what it's doing, `elapsed` ms after go.
+  function flyPose(r, elapsed, now) {
+    const first = r.checks[0];
+    if (!first || elapsed < TAKEOFF_MS) {
+      const heading = first ? Math.atan2(first.plan.hy - r.start.y, first.plan.hx - r.start.x) : 0;
+      return { x: r.start.x, y: r.start.y, heading, scale: 1, wings: elapsed > TAKEOFF_MS - 500, state: 'takeoff' };
+    }
+    const check = r.checks.find((c) => elapsed < c.at) || r.checks[r.checks.length - 1];
+    const { from, plan } = check;
+    const heading = Math.atan2(plan.hy - from.y, plan.hx - from.x);
+    if (elapsed < check.arrive) {
+      const t = ease((elapsed - check.start) / Math.max(1, check.arrive - check.start));
+      return { x: from.x + (plan.hx - from.x) * t, y: from.y + (plan.hy - from.y) * t, heading, scale: 1, wings: true, state: 'flying' };
+    }
+    if (elapsed < check.looked) {
+      return { x: plan.hx + Math.sin(now / 41) * 1.2, y: plan.hy + Math.cos(now / 57) * 1.2, heading, scale: 1, wings: true, state: 'looking' };
+    }
+    if (check.outcome === 'zap' && elapsed < check.at) {
+      const u = (elapsed - check.looked) / ZAP_MS;
+      return { x: plan.hx + Math.sin(u * Math.PI) * 10, y: plan.hy - Math.sin(u * Math.PI) * 16, heading: heading + Math.sin(u * Math.PI * 6) * 0.5, scale: 0.9, wings: true, state: 'zap', u, check };
+    }
+    const landed = check.outcome === 'sugar';
+    return { x: plan.hx, y: plan.hy, heading, scale: landed ? 0.8 : 1, wings: !landed, state: landed ? 'sugar' : 'resting', check };
   }
 
   function start(opponent) {
@@ -108,7 +139,7 @@
       }
       if (r.you && elapsed >= r.fly.at) finish();
     }
-    draw();
+    draw(now, elapsed);
     r.frame = requestAnimationFrame(tick);
   }
 
@@ -203,7 +234,7 @@
     return canvas.getContext('2d');
   }
 
-  function draw() {
+  function draw(now, elapsed) {
     const r = race;
     const canvas = $('raceCanvas');
     const ctx = fit(canvas);
@@ -218,9 +249,20 @@
     const s = canvas.width / r.scene.W;
     ctx.setTransform(s, 0, 0, s, 0, 0);
     for (const person of r.wrong) cross(ctx, person.cx, person.y - 5);
-    if (r.over) drawPath(ctx, r, race.start);
+    if (r.over) drawPath(ctx, r, r.start);
     if (r.you && r.you.found) ring(ctx, r.scene.target, COLORS.green, 30);
     else if (r.over) ring(ctx, r.scene.target, COLORS.red, 30);
+
+    // The fly, racing on the same crowd. Once the result is in, it jumps to where it ended up.
+    const flyTime = r.over ? Math.max(elapsed, r.fly.at) : elapsed;
+    const pose = flyPose(r, flyTime, now);
+    F.Sprite.fly(ctx, pose, now);
+    if (pose.state === 'zap') {
+      F.Sprite.popText(ctx, 'zap', pose.check.plan.hx, pose.check.plan.hy - 30 - pose.u * 10, COLORS.volt);
+    }
+    if (pose.state === 'sugar' && flyTime - r.fly.at < 1500) {
+      F.Sprite.popText(ctx, 'sugar', pose.x, pose.y - 36, COLORS.honey);
+    }
   }
 
   // How the fly searched: its route from person to person, with wrong landings marked.
