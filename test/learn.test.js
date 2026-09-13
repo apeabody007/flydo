@@ -9,7 +9,7 @@ const ROUNDS = 100;
 const TAIL = 50;
 
 if (!isMainThread) {
-  for (const file of ['connectome', 'util', 'scene', 'eye', 'brain', 'game']) {
+  for (const file of ['connectome', 'wiring', 'util', 'scene', 'eye', 'brain', 'game']) {
     require(path.join(__dirname, '..', 'src', `${file}.js`));
   }
   const game = new globalThis.FLYDO.Game({ seed: workerData.seed, learning: workerData.learning });

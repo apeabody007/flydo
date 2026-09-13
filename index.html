@@ -13,15 +13,16 @@
 <body>
   <header class="masthead">
     <h1>Where's Fly-do?</h1>
-    <p class="lede">Ten fruit flies learning to find the striped guy. Each one sees through an eye with a real fly's facet count and learns with mushroom bodies sized from a real fly's wiring diagram. Land on him: sugar. Land on anyone else: a zap.</p>
+    <p class="lede">Ten fruit flies learning to find the striped guy. Each one sees through an eye with a real fly's facet count and learns with mushroom bodies wired from that fly's real connectome. Land on him: sugar. Land on anyone else: a zap.</p>
   </header>
 
   <main class="layout">
     <section class="stage" aria-labelledby="watching">
       <div class="stagehead">
         <h2 id="watching">Watching Fly A</h2>
-        <p class="hint">Pick any fly in the lab to watch it.</p>
+        <button type="button" id="helpless" class="plain">Make Fly A helpless</button>
       </div>
+      <p id="helplessNote" class="callout" hidden></p>
       <div class="frame">
         <canvas id="page" role="img" aria-label="A crowd of pixel people, with a fly searching it"></canvas>
         <p id="banner" class="banner" hidden></p>
@@ -47,7 +48,7 @@
 
     <section class="panel labpanel" aria-labelledby="labhead">
       <h2 id="labhead">The lab</h2>
-      <p class="note">Ten flies, each born with its own random wiring. Same world, same rules, different brains. The fly that has found him the most leads.</p>
+      <p class="note">Ten flies with the same real brain wiring, copied from one fly, so any difference between them comes from experience, like identical twins raised apart. The fly that has found him the most leads. Pick one to watch it.</p>
       <div id="lab" class="lab"></div>
     </section>
 
@@ -71,7 +72,9 @@
           <div class="scale"><span>avoid</span><span id="chance">Land here?</span><span>approach</span></div>
         </div>
         <div class="dans"><span id="pam" class="dan pam">Sugar · PAM</span><span id="ppl1" class="dan ppl1">Zap · PPL1</span></div>
-        <p class="note">Seek sugar, avoid zaps: Freud's pleasure principle, running on <span id="kcTotal">335</span> Kenyon cells. It lands on people who look better than what it's used to.</p>
+        <p class="note">Seek sugar, avoid zaps: Freud's pleasure principle, running on <span id="kcTotal">335</span> Kenyon cells. <span id="landRule">It lands on people who look better than what it's used to.</span></p>
+        <p class="note" id="wired"></p>
+        <p class="note">Strongest real inputs right now: <span id="inputsNow" class="inputs">–</span></p>
         <p class="note" id="dopamine"></p>
       </section>
 
@@ -126,6 +129,7 @@
   <script src="src/util.js"></script>
   <script src="src/scene.js"></script>
   <script src="src/eye.js"></script>
+  <script src="src/wiring.js"></script>
   <script src="src/brain.js"></script>
   <script src="src/game.js"></script>
   <script src="src/ui.js"></script>

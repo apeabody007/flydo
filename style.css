@@ -95,7 +95,16 @@ h2 {
   margin-bottom: 8px;
 }
 
-.hint, .note {
+.callout {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--volt);
+  border-radius: 6px;
+  background: #eef1ff;
+  font-size: 13px;
+}
+
+.note {
   margin: 0;
   font-size: 12.5px;
   color: var(--slate);
@@ -239,6 +248,21 @@ h2 {
 }
 
 .card .rank:empty { display: none; }
+
+.card .tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 10.5px;
+}
+
+.card.helpless .tag { display: inline-block; }
+.inputs { color: var(--ink); font-family: var(--mono); font-size: 12px; }
 .card.leader .rank { background: var(--ink); color: #fff; }
 .card:hover { border-color: #b9bfc9; }
 .card[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
@@ -388,7 +412,7 @@ figcaption {
 
 .chartwrap { position: relative; margin-top: 6px; }
 
-#chart { display: block; width: 100%; height: 250px; border-radius: 4px; }
+#chart { display: block; width: 100%; height: 250px; border-radius: 4px; touch-action: pan-y; /* sideways drags scrub the chart */ }
 #chart:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
 
 .tip {
@@ -427,12 +451,27 @@ figcaption {
   color: var(--slate);
 }
 
+/* Fingers need bigger targets than mouse pointers. */
+@media (pointer: coarse) {
+  .seg button, .plain { min-height: 44px; }
+  .zap input { height: 32px; }
+  .numbers summary { padding: 10px 0; }
+}
+
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     grid-template-areas: "stage" "lab" "side" "chart";
   }
-  .lab { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .lab { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
   .actions { margin-left: 0; }
+}
+
+@media (max-width: 480px) {
+  .masthead { padding: 24px 16px 8px; }
+  .layout { padding: 8px 16px 20px; gap: 16px; }
+  .footer { padding: 0 16px 32px; }
+  .panel { padding: 12px 12px 14px; }
+  .lab { gap: 8px; }
 }

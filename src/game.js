@@ -11,15 +11,18 @@
   const JITTER = 3;          // it never hovers perfectly centred
 
   class Game {
-    constructor({ seed = (Math.random() * 2 ** 32) >>> 0, zapStrength = 0.4, learning = true } = {}) {
+    constructor({ seed = (Math.random() * 2 ** 32) >>> 0, zapStrength = 0.4, learning = true, helpless = false } = {}) {
       this.rand = F.rng(seed);
       this.zapStrength = zapStrength;
       this.learning = learning;
+      // A helpless fly judges each person only by whether they look safe, not by whether they look
+      // better than what it's used to. That's the rule our first version used.
+      this.helpless = helpless;
       this.newFly();
     }
 
     newFly() {
-      this.brain = new F.Brain(this.rand);
+      this.brain = new F.Brain();
       this.expectation = 0; // how appealing people usually look to this fly
       this.history = [];
       this.round = 0;
@@ -74,7 +77,7 @@
       const hy = person.cy + (rand() - 0.5) * 2 * JITTER;
       const view = F.Eye.look(scene, hx, hy);
       const thought = this.brain.evaluate(view);
-      const relative = thought.valence - this.expectation;
+      const relative = this.helpless ? thought.valence : thought.valence - this.expectation;
       const chance = F.landChance(relative);
       const surroundings = glances.reduce((a, b) => a + b, 0) / glances.length;
       return { person, hx, hy, view, thought, relative, chance, surroundings, lands: rand() < chance };

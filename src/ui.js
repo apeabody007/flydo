@@ -40,6 +40,10 @@
   $('kcTotal').textContent = visualCells(kc.left) + visualCells(kc.right);
   $('dopamine').textContent = `This fly's connectome has ${K.dopamineNeurons.PAM} PAM and ` +
     `${K.dopamineNeurons.PPL1} PPL1 dopamine neurons, and one APL neuron per side.`;
+  const wiring = F.WIRING.stats;
+  $('wired').textContent = `Wired with this fly's real connections: ${wiring.inputNeurons} visual neurons of ` +
+    `${wiring.inputTypes} types feed these cells through ${wiring.inputSynapses.toLocaleString()} synapses.`;
+  const flyLabel = (i) => (lab[i].game.helpless ? `${flyName(i)} (helpless)` : flyName(i));
 
   // ---------- the lab ----------
   function buildCards() {
@@ -47,7 +51,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'card';
-      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">${flyName(i)}<span class="rank"></span></span><span class="score">searching</span>`;
+      button.innerHTML = `<canvas aria-hidden="true"></canvas><span class="name">${flyName(i)}<span class="rank"></span></span><span class="score">searching</span><span class="tag">helpless</span>`;
       button.addEventListener('click', () => setFocus(i));
       $('lab').appendChild(button);
       const thumb = document.createElement('canvas');
@@ -74,6 +78,27 @@
     panelsDirty = true;
     chartDirty = true;
     rankDirty = true;
+    showHelpless();
+  }
+
+  // The helplessness experiment: a fly that judges people only by whether they look safe.
+  function showHelpless() {
+    if (!lab.length || !cards.length) return;
+    const name = flyName(focus);
+    const helpless = lab[focus].game.helpless;
+    $('helpless').textContent = helpless ? `Help ${name} recover` : `Make ${name} helpless`;
+    const note = $('helplessNote');
+    note.hidden = !helpless;
+    note.textContent = helpless
+      ? `${name} is helpless now. It only lands on someone who looks safe, and after enough zaps nobody does, ` +
+        'so it mostly stops trying. Watch its "Land here?" chance drop, and its red line in the chart fall ' +
+        '(Turbo speeds that up). Psychologists call this learned helplessness.'
+      : '';
+    $('landRule').textContent = helpless
+      ? "It's helpless: it only lands on people who look safe."
+      : "It lands on people who look better than what it's used to.";
+    $('legendFly').textContent = flyLabel(focus);
+    cards.forEach((card, i) => card.button.classList.toggle('helpless', lab[i].game.helpless));
   }
 
   // The lab is a leaderboard: whoever has found him the most sits first. Ties keep fly order,
@@ -113,7 +138,7 @@
     focus = i;
     cards.forEach((card, j) => card.button.setAttribute('aria-pressed', String(j === i)));
     $('watching').textContent = `Watching ${flyName(i)}`;
-    $('legendFly').textContent = flyName(i);
+    showHelpless();
     banner(null);
     if (lab[i].plan) drawEyes(lab[i]);
     else clearEyes();
@@ -639,6 +664,8 @@
     const labNow = labAverageNow();
     $('labFound').textContent = labNow === null ? '–' : pct(labNow);
     if (!plan) return;
+    const inputs = game.brain.strongestInputs(plan.view, plan.thought.active);
+    $('inputsNow').textContent = inputs.length ? inputs.join(', ') : '–';
     drawKenyonCells($('kcLeft'), game.brain, 0, plan.thought.active[0]);
     drawKenyonCells($('kcRight'), game.brain, 1, plan.thought.active[1]);
     const v = Math.max(-1, Math.min(1, plan.relative / 0.5));
@@ -820,7 +847,7 @@
     const point = labCurve[hover - 1];
     if (point) dot(ctx, hx, Y(point.mean), C.ink);
     if (mine[hover - 1] !== undefined) dot(ctx, hx, Y(mine[hover - 1]), C.red);
-    chartTip({ round: hover, point, mine: mine[hover - 1], x: hx, top: m.t, width: w });
+    chartTip({ round: hover, point, mine: mine[hover - 1], x: hx, top: m.t, bottom: m.t + ph, width: w });
   }
 
   // A filled end marker with a 2px surface ring, so it stays legible where lines cross.
@@ -898,22 +925,33 @@
       row('avg', pct(info.point.mean), 'lab average');
       row('band', `${pct(info.point.low)}–${pct(info.point.high)}`, 'middle half of the flies');
     }
-    row('mine', info.mine === undefined ? '–' : pct(info.mine), flyName(focus));
+    row('mine', info.mine === undefined ? '–' : pct(info.mine), flyLabel(focus));
     row('base', pct(CANT_LEARN), "flies that can't learn");
     const head = document.createElement('div');
     head.className = 'tip-round';
     head.textContent = `Round ${info.round}`;
     tip.replaceChildren(head, ...rows);
     tip.hidden = false;
-    const room = info.x + 16 + tip.offsetWidth <= info.width;
-    tip.style.left = `${room ? info.x + 16 : info.x - 16 - tip.offsetWidth}px`;
-    tip.style.top = `${info.top}px`;
+    // Beside the crosshair when there's room on either side. On a narrow screen there isn't, so it
+    // stays inside the chart and sits low, where learned flies' lines rarely are.
+    const right = info.x + 16;
+    const left = info.x - 16 - tip.offsetWidth;
+    if (right + tip.offsetWidth <= info.width) {
+      tip.style.left = `${right}px`;
+      tip.style.top = `${info.top}px`;
+    } else if (left >= 0) {
+      tip.style.left = `${left}px`;
+      tip.style.top = `${info.top}px`;
+    } else {
+      tip.style.left = `${Math.max(0, Math.min(info.width - tip.offsetWidth, info.x - tip.offsetWidth / 2))}px`;
+      tip.style.top = `${Math.max(info.top, info.bottom - tip.offsetHeight - 4)}px`;
+    }
   }
 
   // The chart's numbers as a table, for anyone who'd rather read than hover.
   function drawTable({ labCurve, mine }) {
     if (!$('numbers').open) return;
-    $('numbersFly').textContent = flyName(focus);
+    $('numbersFly').textContent = flyLabel(focus);
     const newest = Math.max(labCurve.length, mine.length);
     const rows = [];
     for (let r = newest; r >= 1 && r > newest - 15; r--) {
@@ -945,8 +983,14 @@
       chartDirty = true;
     };
     canvas.addEventListener('pointermove', (e) => hoverAt(e.clientX));
-    canvas.addEventListener('pointerleave', () => {
-      if (document.activeElement === canvas) return;
+    canvas.addEventListener('pointerdown', (e) => hoverAt(e.clientX)); // a tap on a phone
+    canvas.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'touch' || document.activeElement === canvas) return; // taps keep the readout
+      chartView.hover = null;
+      chartDirty = true;
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (chartView.hover === null || e.target === canvas) return;
       chartView.hover = null;
       chartDirty = true;
     });
@@ -998,6 +1042,14 @@
     }
     $('pause').textContent = paused ? 'Resume' : 'Pause';
     $('pause').setAttribute('aria-pressed', String(paused));
+  });
+
+  $('helpless').addEventListener('click', () => {
+    const { game } = lab[focus];
+    game.helpless = !game.helpless;
+    showHelpless();
+    panelsDirty = true;
+    chartDirty = true;
   });
 
   $('reset').addEventListener('click', () => {

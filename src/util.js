@@ -14,13 +14,5 @@
     };
   };
 
-  F.shuffle = function (items, rand) {
-    for (let i = items.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [items[i], items[j]] = [items[j], items[i]];
-    }
-    return items;
-  };
-
   F.pick = (items, rand) => items[Math.floor(rand() * items.length)];
 })(globalThis.FLYDO = globalThis.FLYDO || {});

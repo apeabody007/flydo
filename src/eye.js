@@ -112,5 +112,5 @@
     return { cx, cy, lum, vpn };
   }
 
-  F.Eye = { facets, reach, look, luminanceMap, flyLuminance, SPACING, HALF_W, HALF_H, VPN_PER_EYE };
+  F.Eye = { facets, reach, look, luminanceMap, flyLuminance, SPACING, HALF_W, HALF_H, VPN_PER_EYE, FEATURES };
 })(globalThis.FLYDO = globalThis.FLYDO || {});
