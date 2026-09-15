@@ -17,7 +17,7 @@
   const CANT_LEARN = 0.12; // share found by flies with learning switched off, measured by test/learn.test.js
   const pct = (x) => `${Math.round(x * 100)}%`;
 
-  let speed = 'fast';
+  let speed = 'normal';
   let paused = false;
   let pausedAt = 0;
   let focus = 0;
